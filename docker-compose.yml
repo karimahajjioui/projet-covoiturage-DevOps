@@ -1,0 +1,60 @@
+services:
+  users-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: users
+    volumes:
+      - users-data:/var/lib/postgresql/data
+  trips-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: trips
+    volumes:
+      - trips-data:/var/lib/postgresql/data
+  bookings-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: bookings
+    volumes:
+      - bookings-data:/var/lib/postgresql/data
+  users-service:
+    build: ./services/users-service
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://app:${DB_PASSWORD}@users-db:5432/users
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - users-db
+  trips-service:
+    build: ./services/trips-service
+    ports:
+      - '3002:3002'
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgres://app:${DB_PASSWORD}@trips-db:5432/trips
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - trips-db
+  bookings-service:
+    build: ./services/bookings-service
+    ports:
+      - '3003:3003'
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgres://app:${DB_PASSWORD}@bookings-db:5432/bookings
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - bookings-db
+      - trips-service
+volumes:
+  users-data:
+  trips-data:
+  bookings-data:
