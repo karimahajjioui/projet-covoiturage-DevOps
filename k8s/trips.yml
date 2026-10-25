@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trips-db-pvc
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trips-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trips-db
+  template:
+    metadata:
+      labels:
+        app: trips-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: app
+
+            - name: POSTGRES_DB
+              value: trips
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: trips-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trips-db
+spec:
+  selector:
+    app: trips-db
+  ports:
+    - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trips-service
+spec:
+
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trips-service
+  template:
+    metadata:
+      labels:
+        app: trips-service
+    spec:
+      containers:
+        - name: trips-service
+          image: hajjiouikarima/covoiturage-trips-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: '3002'
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: DATABASE_URL
+              value: postgres://app:$(DB_PASSWORD)@trips-db:5432/trips
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+
+              path: /health
+              port: 3002
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trips-service
+  labels:
+    app: trips-service
+spec:
+  selector:
+    app: trips-service
+  ports:
+    - name: http
+      port: 3002
+      targetPort: 3002
