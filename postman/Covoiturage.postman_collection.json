@@ -1,0 +1,333 @@
+{
+  "info": {
+    "_postman_id": "c72add0a-7da6-4e53-a1af-b7c4343d8ccb",
+    "name": "Covoiturage",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "59192778",
+    "_collection_link": "https://go.postman.co/collection/59192778-c72add0a-7da6-4e53-a1af-b7c4343d8ccb?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Inscription",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 créé', () => pm.response.to.have.status(201));"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('email', 'user' + Date.now() + '@test.com');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Sara\", \"email\": \"{{email}}\", \"password\": \"1234\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{users_url}}/register",
+          "host": [
+            "{{users_url}}"
+          ],
+          "path": [
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Connexion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 avec token', () => pm.response.to.have.status(200));\r\npm.environment.set('token', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{email}}\", \"password\": \"1234\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{users_url}}/login",
+          "host": [
+            "{{users_url}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Publier un trajet",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 créé', () => pm.response.to.have.status(201));\r\npm.environment.set('trip_id', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"from_city\": \"Fès\", \"to_city\": \"Casablanca\", \"departure_time\": \"2026-12-15T08:00:00\", \"price\": 100, \"seats\": 3}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{trips_url}}/trips",
+          "host": [
+            "{{trips_url}}"
+          ],
+          "path": [
+            "trips"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chercher des trajets",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));\r\npm.test('la liste contient le trajet', () => pm.expect(pm.response.json().length).to.be.above(0));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{trips_url}}/trips?from=Fès&to=Casablanca",
+          "host": [
+            "{{trips_url}}"
+          ],
+          "path": [
+            "trips"
+          ],
+          "query": [
+            {
+              "key": "from",
+              "value": "Fès"
+            },
+            {
+              "key": "to",
+              "value": "Casablanca"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Réserver",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 créé', () => pm.response.to.have.status(201));\r\npm.environment.set('booking_id', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"trip_id\": {{trip_id}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{bookings_url}}/bookings",
+          "host": [
+            "{{bookings_url}}"
+          ],
+          "path": [
+            "bookings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Vérifier les places",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));\r\npm.test('2 places restantes', () => pm.expect(pm.response.json().seats_available).to.eql(2));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{trips_url}}/trips/{{trip_id}}",
+          "host": [
+            "{{trips_url}}"
+          ],
+          "path": [
+            "trips",
+            "{{trip_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Mes réservations",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));\r\npm.test('ma réservation est dans la liste', () => {\r\n  const id = Number(pm.environment.get('booking_id'));\r\n  pm.expect(pm.response.json().some(b => b.id === id)).to.be.true;\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{bookings_url}}/bookings/me",
+          "host": [
+            "{{bookings_url}}"
+          ],
+          "path": [
+            "bookings",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Annuler",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 annulée', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{bookings_url}}/bookings/{{booking_id}}",
+          "host": [
+            "{{bookings_url}}"
+          ],
+          "path": [
+            "bookings",
+            "{{booking_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
