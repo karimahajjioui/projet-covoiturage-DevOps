@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [users-service, trips-service, bookings-service]
+        service: [users-service, trips-service, bookings-service, gateway]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [users-service, trips-service, bookings-service]
+        service: [users-service, trips-service, bookings-service, gateway]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
