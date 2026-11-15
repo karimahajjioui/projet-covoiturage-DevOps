@@ -51,6 +51,7 @@ services:
       PORT: 3003
       DATABASE_URL: postgres://app:${DB_PASSWORD}@bookings-db:5432/bookings
       JWT_SECRET: ${JWT_SECRET}
+      TRIPS_SERVICE_URL: http://trips-service:3002
     depends_on:
       - bookings-db
       - trips-service
