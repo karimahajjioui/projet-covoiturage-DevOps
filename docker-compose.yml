@@ -23,6 +23,21 @@ services:
       POSTGRES_DB: bookings
     volumes:
       - bookings-data:/var/lib/postgresql/data
+  notifications-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: notifications
+    volumes:
+      - notifications-data:/var/lib/postgresql/data
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - '15672:15672'
   users-service:
     build: ./services/users-service
     ports:
@@ -52,11 +67,23 @@ services:
       DATABASE_URL: postgres://app:${DB_PASSWORD}@bookings-db:5432/bookings
       JWT_SECRET: ${JWT_SECRET}
       TRIPS_SERVICE_URL: http://trips-service:3002
+      RABBITMQ_URL: amqp://app:${RABBITMQ_PASSWORD}@rabbitmq:5672
     depends_on:
       - bookings-db
       - trips-service
-
-  gateway:  
+      - rabbitmq
+  notifications-service:
+    build: ./services/notifications-service
+    ports:
+      - '3004:3004'
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgres://app:${DB_PASSWORD}@notifications-db:5432/notifications
+      RABBITMQ_URL: amqp://app:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    depends_on:
+      - notifications-db
+      - rabbitmq
+  gateway:
     build: ./services/gateway
     ports:
       - '8080:8080'
@@ -70,7 +97,9 @@ services:
       - users-service
       - trips-service
       - bookings-service
+      - notifications-service
 volumes:
   users-data:
   trips-data:
   bookings-data:
+  notifications-data:
