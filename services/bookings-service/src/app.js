@@ -2,6 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const client = require('prom-client');
 const auth = require('./auth');
+const events = require('./events');
 
 const app = express();
 app.use(express.json());
@@ -48,6 +49,7 @@ app.post('/bookings', auth, async (req, res) => {
         'INSERT INTO bookings (trip_id, user_id) VALUES ($1, $2) RETURNING *',
         [trip_id, req.user.id]
       );
+      events.publish({ type: 'booking.created', booking_id: result.rows[0].id, trip_id, user_id: req.user.id, user_name: req.user.name });
       res.status(201).json(result.rows[0]);
     } catch (err) {
       await changeSeats(trip_id, 1); // on rend la place si l'enregistrement a échoué
@@ -77,6 +79,7 @@ app.delete('/bookings/:id', auth, async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'réservation introuvable' });
     await changeSeats(result.rows[0].trip_id, 1);
+    events.publish({ type: 'booking.cancelled', booking_id: result.rows[0].id, trip_id: result.rows[0].trip_id, user_id: req.user.id });
     res.json({ message: 'réservation annulée' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -90,6 +93,7 @@ async function initDb() {
     user_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
   )`);
+  events.connect();
 }
 
 module.exports = { app, initDb };
